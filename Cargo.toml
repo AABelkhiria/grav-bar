@@ -1,0 +1,12 @@
+[package]
+name = "grav-bar"
+version = "0.1.0"
+edition = "2021"
+description = "Fast, zero-dependency, and highly customizable custom status line for the Google Antigravity CLI"
+license = "MIT"
+repository = "https://github.com/AABelkhiria/grav-bar"
+readme = "README.md"
+keywords = ["cli", "status-bar", "antigravity"]
+categories = ["command-line-utilities"]
+
+[dependencies]
