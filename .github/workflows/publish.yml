@@ -1,0 +1,62 @@
+name: Publish to crates.io
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Publish and Release
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      contents: write # Needed to create tags and GitHub releases
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # We need the full git history to check for tags
+          
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        
+      - name: Extract version from Cargo.toml
+        id: get_version
+        run: |
+          # Parse version out of Cargo.toml using cargo metadata
+          VERSION=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[0].version')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "Found version: $VERSION"
+          
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          TAG="${{ steps.get_version.outputs.tag }}"
+          if git show-ref --tags --verify --quiet "refs/tags/$TAG"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Tag $TAG already exists in the repository. Skipping publish."
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "✅ Tag $TAG does not exist. Proceeding..."
+          fi
+          
+      - name: Build project
+        if: steps.check_tag.outputs.exists == 'false'
+        run: cargo build --release
+        
+      - name: Create Git Tag and GitHub Release
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_version.outputs.tag }}
+          name: Release ${{ steps.get_version.outputs.tag }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Publish to crates.io
+        if: steps.check_tag.outputs.exists == 'false'
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

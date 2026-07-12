@@ -7,10 +7,19 @@ Blazing-fast, zero-dependency, and highly customizable custom status line built 
 - **Fast**: Written in pure Rust with zero external dependencies. It completes execution in <1ms!
 - **Dynamic Resizing**: Automatically shortens the file path and model names when you resize your terminal window to prevent line wrapping.
 - **Quota Parsing**: Automatically parses standard quotas for both Google Gemini and 3rd Party (3p) models.
-- **Visual Flourishes**: Supports dynamic colored progress bars for context length and available quotas.
 - **Right Aligned Sections**: Calculates terminal width and dynamically aligns agent status and model type to the right edge.
 
 ## Installation
+
+### From crates.io
+
+The easiest way to install `grav-bar` is directly from crates.io using Cargo:
+
+```sh
+cargo install grav-bar
+```
+
+*Note: This will install the binary to `~/.cargo/bin/grav-bar`.*
 
 ### From Source
 
@@ -32,11 +41,13 @@ Add the following to your `~/.gemini/antigravity-cli/settings.json`:
 {
   "ui": {
     "status_line": {
-      "command": "/Users/YOUR_USER/.local/bin/grav-bar"
+      "command": "/Users/YOUR_USER/.cargo/bin/grav-bar"
     }
   }
 }
 ```
+
+*(Note: If you built from source, use `/Users/YOUR_USER/.local/bin/grav-bar` instead.)*
 
 ## How It Works
 
@@ -50,4 +61,4 @@ Make sure to pass CI by running `cargo fmt` and `cargo clippy -- -D warnings`.
 
 ## License
 
-MIT
+[MIT](LICENSE)
