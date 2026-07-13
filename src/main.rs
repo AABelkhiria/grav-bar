@@ -40,9 +40,10 @@ fn extract_string_field(json: &str, field: &str) -> Option<String> {
     if let Some(idx) = json.find(&search) {
         let remainder = json[idx + search.len()..].trim_start();
         if let Some(stripped) = remainder.strip_prefix('"')
-            && let Some(end) = stripped.find('"') {
-                return Some(stripped[..end].to_string());
-            }
+            && let Some(end) = stripped.find('"')
+        {
+            return Some(stripped[..end].to_string());
+        }
     }
     None
 }
@@ -75,15 +76,16 @@ fn extract_quota_frac(json: &str, key: &str) -> Option<f64> {
         let q_block = &json[quota_idx..];
         let search = format!("\"{}\":", key);
         if let Some(k_idx) = q_block.find(&search)
-            && let Some(frac_idx) = q_block[k_idx..].find("\"remaining_fraction\":") {
-                let frac_str = q_block[k_idx + frac_idx + 21..].trim_start();
-                let end_frac = frac_str
-                    .find(|c: char| !c.is_ascii_digit() && c != '.' && c != '-')
-                    .unwrap_or(frac_str.len());
-                if let Ok(val) = frac_str[..end_frac].parse::<f64>() {
-                    return Some(val);
-                }
+            && let Some(frac_idx) = q_block[k_idx..].find("\"remaining_fraction\":")
+        {
+            let frac_str = q_block[k_idx + frac_idx + 21..].trim_start();
+            let end_frac = frac_str
+                .find(|c: char| !c.is_ascii_digit() && c != '.' && c != '-')
+                .unwrap_or(frac_str.len());
+            if let Ok(val) = frac_str[..end_frac].parse::<f64>() {
+                return Some(val);
             }
+        }
     }
     None
 }
@@ -93,15 +95,16 @@ fn extract_quota_reset_secs(json: &str, key: &str) -> Option<u32> {
         let q_block = &json[quota_idx..];
         let search = format!("\"{}\":", key);
         if let Some(k_idx) = q_block.find(&search)
-            && let Some(reset_idx) = q_block[k_idx..].find("\"reset_in_seconds\":") {
-                let reset_str = q_block[k_idx + reset_idx + 19..].trim_start();
-                let end = reset_str
-                    .find(|c: char| !c.is_ascii_digit())
-                    .unwrap_or(reset_str.len());
-                if let Ok(val) = reset_str[..end].parse::<u32>() {
-                    return Some(val);
-                }
+            && let Some(reset_idx) = q_block[k_idx..].find("\"reset_in_seconds\":")
+        {
+            let reset_str = q_block[k_idx + reset_idx + 19..].trim_start();
+            let end = reset_str
+                .find(|c: char| !c.is_ascii_digit())
+                .unwrap_or(reset_str.len());
+            if let Ok(val) = reset_str[..end].parse::<u32>() {
+                return Some(val);
             }
+        }
     }
     None
 }
@@ -192,10 +195,12 @@ fn main() {
         .or_else(|| extract_string_field(&input, "id"))
         .unwrap_or_else(|| "Unknown Model".to_string());
 
-    if term_width > 0 && term_width < 140
-        && let Some(idx) = model.rfind(" (") {
-            model.truncate(idx);
-        }
+    if term_width > 0
+        && term_width < 140
+        && let Some(idx) = model.rfind(" (")
+    {
+        model.truncate(idx);
+    }
 
     let context_frac = extract_f64_field(&input, "used_percentage").unwrap_or(0.0);
     let context_pct = context_frac.round() as u32;
