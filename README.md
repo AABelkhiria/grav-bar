@@ -1,6 +1,6 @@
 # grav-bar
 
-Blazing-fast, zero-dependency, and highly customizable custom status line built in Rust for the Google Antigravity CLI (`agy`).
+Fast and zero-dependency custom status line built in Rust for the Google Antigravity CLI (`agy`).
 
 ## Features
 
@@ -55,7 +55,7 @@ Add the following to your `~/.gemini/antigravity-cli/settings.json`:
 
 ## Contributing
 
-Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+Pull requests are welcome!
 
 Make sure to pass CI by running `cargo fmt` and `cargo clippy -- -D warnings`.
 
