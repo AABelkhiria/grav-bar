@@ -7,6 +7,25 @@ const BLUE: &str = "\x1b[34m";
 const GREEN: &str = "\x1b[32m";
 const WHITE: &str = "\x1b[97m";
 const RESET: &str = "\x1b[0m";
+const RED: &str = "\x1b[31m";
+
+fn get_quota_color(pct: u32) -> &'static str {
+    if pct <= 10 {
+        RED
+    } else if pct <= 30 {
+        YELLOW
+    } else {
+        GREEN
+    }
+}
+
+fn get_context_color(pct: u32) -> &'static str {
+    if pct >= 90 {
+        RED
+    } else {
+        YELLOW
+    }
+}
 
 fn get_git_branch(cwd: &str) -> String {
     let mut cmd = Command::new("git");
@@ -209,8 +228,9 @@ fn main() {
     let pct_5h = (frac_5h * 100.0).round() as u32;
     let pct_w = (frac_w * 100.0).round() as u32;
 
+    let context_color = get_context_color(context_pct);
     let context_bar = build_progress_bar(context_pct, 5);
-    let context_bar_colored = format!("{}{}{}", YELLOW, context_bar, WHITE);
+    let context_bar_colored = format!("{}{}{}", context_color, context_bar, WHITE);
 
     let bar_5h = build_progress_bar(pct_5h, 5);
     let bar_w = build_progress_bar(pct_w, 5);
@@ -226,9 +246,12 @@ fn main() {
         "".to_string()
     };
 
+    let color_5h = get_quota_color(pct_5h);
+    let color_w = get_quota_color(pct_w);
+
     let quotas = format!(
-        "5h {GREEN}{}{WHITE} {}%{} - W {GREEN}{}{WHITE} {}%{}",
-        bar_5h, pct_5h, r_5h_str, bar_w, pct_w, r_w_str
+        "5h {}{}{WHITE} {}%{} - W {}{}{WHITE} {}%{}",
+        color_5h, bar_5h, pct_5h, r_5h_str, color_w, bar_w, pct_w, r_w_str
     );
 
     let left_side = format!(
