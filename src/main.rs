@@ -20,11 +20,7 @@ fn get_quota_color(pct: u32) -> &'static str {
 }
 
 fn get_context_color(pct: u32) -> &'static str {
-    if pct >= 90 {
-        RED
-    } else {
-        YELLOW
-    }
+    if pct >= 90 { RED } else { YELLOW }
 }
 
 fn get_git_branch(cwd: &str) -> String {
@@ -43,11 +39,10 @@ fn extract_string_field(json: &str, field: &str) -> Option<String> {
     let search = format!("\"{}\":", field);
     if let Some(idx) = json.find(&search) {
         let remainder = json[idx + search.len()..].trim_start();
-        if let Some(stripped) = remainder.strip_prefix('"') {
-            if let Some(end) = stripped.find('"') {
+        if let Some(stripped) = remainder.strip_prefix('"')
+            && let Some(end) = stripped.find('"') {
                 return Some(stripped[..end].to_string());
             }
-        }
     }
     None
 }
@@ -79,8 +74,8 @@ fn extract_quota_frac(json: &str, key: &str) -> Option<f64> {
     if let Some(quota_idx) = json.find("\"quota\":") {
         let q_block = &json[quota_idx..];
         let search = format!("\"{}\":", key);
-        if let Some(k_idx) = q_block.find(&search) {
-            if let Some(frac_idx) = q_block[k_idx..].find("\"remaining_fraction\":") {
+        if let Some(k_idx) = q_block.find(&search)
+            && let Some(frac_idx) = q_block[k_idx..].find("\"remaining_fraction\":") {
                 let frac_str = q_block[k_idx + frac_idx + 21..].trim_start();
                 let end_frac = frac_str
                     .find(|c: char| !c.is_ascii_digit() && c != '.' && c != '-')
@@ -89,7 +84,6 @@ fn extract_quota_frac(json: &str, key: &str) -> Option<f64> {
                     return Some(val);
                 }
             }
-        }
     }
     None
 }
@@ -98,8 +92,8 @@ fn extract_quota_reset_secs(json: &str, key: &str) -> Option<u32> {
     if let Some(quota_idx) = json.find("\"quota\":") {
         let q_block = &json[quota_idx..];
         let search = format!("\"{}\":", key);
-        if let Some(k_idx) = q_block.find(&search) {
-            if let Some(reset_idx) = q_block[k_idx..].find("\"reset_in_seconds\":") {
+        if let Some(k_idx) = q_block.find(&search)
+            && let Some(reset_idx) = q_block[k_idx..].find("\"reset_in_seconds\":") {
                 let reset_str = q_block[k_idx + reset_idx + 19..].trim_start();
                 let end = reset_str
                     .find(|c: char| !c.is_ascii_digit())
@@ -108,7 +102,6 @@ fn extract_quota_reset_secs(json: &str, key: &str) -> Option<u32> {
                     return Some(val);
                 }
             }
-        }
     }
     None
 }
@@ -199,11 +192,10 @@ fn main() {
         .or_else(|| extract_string_field(&input, "id"))
         .unwrap_or_else(|| "Unknown Model".to_string());
 
-    if term_width > 0 && term_width < 140 {
-        if let Some(idx) = model.rfind(" (") {
+    if term_width > 0 && term_width < 140
+        && let Some(idx) = model.rfind(" (") {
             model.truncate(idx);
         }
-    }
 
     let context_frac = extract_f64_field(&input, "used_percentage").unwrap_or(0.0);
     let context_pct = context_frac.round() as u32;

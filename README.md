@@ -57,7 +57,13 @@ Add the following to your `~/.gemini/antigravity-cli/settings.json`:
 
 Pull requests are welcome!
 
-Make sure to pass CI by running `cargo fmt` and `cargo clippy -- -D warnings`.
+### Git Hooks
+
+We use a shared `pre-commit` hook to automatically format and lint the code before each commit. After cloning the repository, please configure your local Git to use the shared hooks directory by running:
+
+```sh
+git config core.hooksPath .githooks
+```
 
 ## License
 
