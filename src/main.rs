@@ -153,54 +153,16 @@ fn main() {
     let cwd_basename = cwd.rsplit('/').next().unwrap_or(&cwd);
     let home = std::env::var("HOME").unwrap_or_else(|_| "/Users/ash".to_string());
 
-    let cwd_display_text = if term_width > 0 && term_width < 140 {
-        cwd_basename.to_string()
-    } else if cwd.starts_with(&home) {
-        cwd.replacen(&home, "~", 1)
-    } else {
-        cwd.clone()
-    };
-
     let branch_json = extract_string_field(&input, "branch").unwrap_or_default();
-    let mut branch_raw = if branch_json.is_empty() || branch_json == "none" {
+    let branch_raw = if branch_json.is_empty() || branch_json == "none" {
         get_git_branch(&cwd)
     } else {
         branch_json
     };
 
-    if branch_raw.len() > 15 {
-        let parts: Vec<&str> = branch_raw.split('-').collect();
-        if parts.len() >= 2 {
-            branch_raw = format!("{}-{}", parts[0], parts[1]);
-        }
-    }
-
-    let mut location = String::new();
-    if !cwd_display_text.is_empty() {
-        location.push_str(&format!(" {YELLOW}{}", cwd_display_text));
-    }
-    if branch_raw != "none" && !branch_raw.is_empty() {
-        if !location.is_empty() {
-            location.push(' ');
-        }
-        location.push_str(&format!("{WHITE}({}{}{WHITE})", MAGENTA, branch_raw));
-    }
-    let location_display = if location.is_empty() {
-        "".to_string()
-    } else {
-        format!("{} {RESET}│", location)
-    };
-
-    let mut model = extract_string_field(&input, "display_name")
+    let model = extract_string_field(&input, "display_name")
         .or_else(|| extract_string_field(&input, "id"))
         .unwrap_or_else(|| "Unknown Model".to_string());
-
-    if term_width > 0
-        && term_width < 140
-        && let Some(idx) = model.rfind(" (")
-    {
-        model.truncate(idx);
-    }
 
     let context_frac = extract_f64_field(&input, "used_percentage").unwrap_or(0.0);
     let context_pct = context_frac.round() as u32;
@@ -246,17 +208,94 @@ fn main() {
     let color_5h = get_quota_color(pct_5h);
     let color_w = get_quota_color(pct_w);
 
-    let quotas = format!(
-        "5h {}{}{WHITE} {}%{} - W {}{}{WHITE} {}%{}",
-        color_5h, bar_5h, pct_5h, r_5h_str, color_w, bar_w, pct_w, r_w_str
-    );
+    let mut flags = [false, false, false, false, false]; // dir, branch, model, quotas, context
+    let min_padding = 3;
 
-    let left_side = format!(
-        "{}{WHITE} Context {} {}% {RESET}│ {WHITE} Quotas {} {RESET}",
-        location_display, context_bar_colored, context_pct, quotas
-    );
+    let get_parts = |flags: &[bool; 5]| {
+        let cwd_display = if flags[0] {
+            cwd_basename.to_string()
+        } else if cwd.starts_with(&home) {
+            cwd.replacen(&home, "~", 1)
+        } else {
+            cwd.clone()
+        };
 
-    let right_side = format!("{BLUE}{} - {} {RESET}", active_agents, model);
+        let branch_display = if flags[1] {
+            let mut b = branch_raw.clone();
+            if b.len() > 15 {
+                let parts: Vec<&str> = b.split('-').collect();
+                if parts.len() >= 2 {
+                    b = format!("{}-{}", parts[0], parts[1]);
+                }
+            }
+            b
+        } else {
+            branch_raw.clone()
+        };
+
+        let model_display = if flags[2] {
+            let mut m = model.clone();
+            if let Some(idx) = m.rfind(" (") {
+                m.truncate(idx);
+            }
+            m
+        } else {
+            model.clone()
+        };
+
+        let mut location = String::new();
+        if !cwd_display.is_empty() {
+            location.push_str(&format!(" {YELLOW}{}", cwd_display));
+        }
+        if branch_display != "none" && !branch_display.is_empty() {
+            if !location.is_empty() {
+                location.push(' ');
+            }
+            location.push_str(&format!("{WHITE}({}{}{WHITE})", MAGENTA, branch_display));
+        }
+        let location_display = if location.is_empty() {
+            "".to_string()
+        } else {
+            format!("{} {RESET}│", location)
+        };
+
+        let quotas_display = if flags[3] {
+            format!(
+                "5h {}{}{WHITE} {}% - W {}{}{WHITE} {}%",
+                color_5h, bar_5h, pct_5h, color_w, bar_w, pct_w
+            )
+        } else {
+            format!(
+                "5h {}{}{WHITE} {}%{} - W {}{}{WHITE} {}%{}",
+                color_5h, bar_5h, pct_5h, r_5h_str, color_w, bar_w, pct_w, r_w_str
+            )
+        };
+
+        let context_label = if flags[4] { "Ctx" } else { "Context" };
+
+        let left_side = format!(
+            "{}{WHITE} {} {} {}% {RESET}│ {WHITE} Quotas {} {RESET}",
+            location_display, context_label, context_bar_colored, context_pct, quotas_display
+        );
+
+        let right_side = format!("{BLUE}{} - {} {RESET}", active_agents, model_display);
+
+        (left_side, right_side)
+    };
+
+    let (mut left_side, mut right_side) = get_parts(&flags);
+
+    if term_width > 0 {
+        let mut i = 0;
+        while i < 5 && visible_len(&left_side) + visible_len(&right_side) + min_padding > term_width
+        {
+            flags[i] = true;
+            let (l, r) = get_parts(&flags);
+            left_side = l;
+            right_side = r;
+            i += 1;
+        }
+    }
 
     let left_len = visible_len(&left_side);
     let right_len = visible_len(&right_side);
